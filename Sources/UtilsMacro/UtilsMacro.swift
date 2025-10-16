@@ -6,5 +6,7 @@ import Foundation
 @freestanding(expression)
 public macro staticURL(_ value: StaticString) -> URL = #externalMacro(module: "UtilsMacroMacros", type: "StaticURLMacro")
 
+#if canImport(UIKit)
 @freestanding(expression)
-public macro staticBundleURL(_ value: StaticString) -> URL = #externalMacro(module: "UtilsMacroMacros", type: "StaticBundleURLMacro")
+public macro staticSystemImage(_ value: StaticString) -> URL = #externalMacro(module: "UtilsMacroMacros", type: "StaticSystemImage")
+#endif

@@ -5,35 +5,11 @@ import SwiftSyntaxMacros
 
 import Foundation
 
-protocol BaseStringToUrlMacro: ExpressionMacro {
-    static func makeURL(string: String) -> URL?
-    
-    static func returnValue(input: ExprSyntax) -> ExprSyntax
-}
-
-extension BaseStringToUrlMacro {
-    public static func expansion(
-        of node: some FreestandingMacroExpansionSyntax,
-        in context: some MacroExpansionContext
-    ) throws -> ExprSyntax {
-        guard let argument = node.arguments.first?.expression,
-              let literal = argument.as(StringLiteralExprSyntax.self),
-              case .stringSegment(let segment) = literal.segments.first
-        else {
-            throw StaticURLMacroError.notAStringLiteral
-        }
-        
-        guard makeURL(string: segment.content.text) != nil else {
+public struct StaticURLMacro: BaseStringToUrlMacro {
+    static func validateInput(string: String) throws {
+        if URL(string: string) == nil {
             throw StaticURLMacroError.invalidURL
         }
-        
-        return returnValue(input: argument)
-    }
-}
-
-public struct StaticURLMacro: BaseStringToUrlMacro {
-    static func makeURL(string: String) -> URL? {
-        URL(string: string)
     }
     
     static func returnValue(input: SwiftSyntax.ExprSyntax) -> SwiftSyntax.ExprSyntax {
@@ -41,27 +17,33 @@ public struct StaticURLMacro: BaseStringToUrlMacro {
     }
 }
 
-public struct StaticBundleURLMacro: BaseStringToUrlMacro {
-    static func makeURL(string: String) -> URL? {
-        Bundle.main.url(forResource: string, withExtension: nil)
+#if canImport(UIKit)
+import UIKit
+
+public struct StaticSystemImage: BaseStringToUrlMacro {
+    static func validateInput(string: String) throws {
+        if UIImage(systemName:  string) == nil {
+            throw StaticURLMacroError.invalidURL
+        }
     }
+    
     static func returnValue(input: SwiftSyntax.ExprSyntax) -> SwiftSyntax.ExprSyntax {
-        "Foundation.Bundle.main.url(forResource: \(input), withExtension: nil)"
+        "UIKit.UIImage(systemName: \(input))"
     }
 }
-
-enum StaticURLMacroError: String, Error, CustomStringConvertible {
-    case notAStringLiteral = "Argument is not a string literal"
-    case invalidURL = "Argument is not a valid URL"
-
-    public var description: String { rawValue }
-}
-
+#endif
 
 @main
 struct UtilsMacroPlugin: CompilerPlugin {
+#if canImport(UIKit)
+    static let extraMacros: [Macro.Type] = [
+        StaticSystemImage.self
+    ]
+#else
+    static let extraMacros: [Macro.Type] = []
+#endif
+
     let providingMacros: [Macro.Type] = [
         StaticURLMacro.self,
-        StaticBundleURLMacro.self
-    ]
+    ] + UtilsMacroPlugin.extraMacros
 }
