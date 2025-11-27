@@ -19,10 +19,11 @@ public struct StaticURLMacro: BaseStringToUrlMacro {
 
 #if canImport(UIKit)
 import UIKit
+import SwiftUI
 
-public struct StaticSystemImage: BaseStringToUrlMacro {
+public struct StaticSystemUIImage: BaseStringToUrlMacro {
     static func validateInput(string: String) throws {
-        if UIImage(systemName:  string) == nil {
+        if UIImage(systemName: string) == nil {
             throw StaticURLMacroError.invalidURL
         }
     }
@@ -31,12 +32,26 @@ public struct StaticSystemImage: BaseStringToUrlMacro {
         "UIKit.UIImage(systemName: \(input))"
     }
 }
+
+
+public struct StaticSystemImage: BaseStringToUrlMacro {
+    static func validateInput(string: String) throws {
+        if UIImage(systemName: string) == nil {
+            throw StaticURLMacroError.invalidURL
+        }
+    }
+    
+    static func returnValue(input: SwiftSyntax.ExprSyntax) -> SwiftSyntax.ExprSyntax {
+        "SwiftUI.Image(systemName: \(input))"
+    }
+}
 #endif
 
 @main
 struct UtilsMacroPlugin: CompilerPlugin {
 #if canImport(UIKit)
     static let extraMacros: [Macro.Type] = [
+        StaticSystemUIImage.self,
         StaticSystemImage.self
     ]
 #else

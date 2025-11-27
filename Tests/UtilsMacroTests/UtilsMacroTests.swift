@@ -10,30 +10,21 @@ import UtilsMacroMacros
 
 final class UtilsMacroTests: XCTestCase {
     private let macros: [String: Macro.Type] = [
-        "StaticURL": StaticURLMacro.self,
-        "StaticBundleURL": StaticBundleURLMacro.self
+        "staticURL": StaticURLMacro.self
     ]
     
     func testValidURLExpandsCorrectly() {
         assertMacroExpansion(
-            """
-            #StaticURL("https://swift.org")
-            """,
-            expandedSource: """
-            Foundation.URL(string: "https://swift.org")!
-            """,
+            #"#staticURL("https://swift.org")"#,
+            expandedSource: #"Foundation.URL(string: "https://swift.org")!"#,
             macros: macros
         )
     }
 
     func testInvalidURLThrowsError() {
         assertMacroExpansion(
-            """
-            #StaticURL("not a url")
-            """,
-            expandedSource: """
-            Foundation.URL(string: "not a url")!
-            """,
+            #"#staticURL("not a url")"#,
+            expandedSource: #"Foundation.URL(string: "not a url")!"#,
             diagnostics: [
                 DiagnosticSpec(message: "Argument is not a valid URL", line: 1, column: 1)
             ],
@@ -42,8 +33,8 @@ final class UtilsMacroTests: XCTestCase {
     }
 
     func testNotAStringLiteral() {
-        assertMacroExpansion("#StaticURL(123)",
-            expandedSource: "#StaticURL(123)",
+        assertMacroExpansion("#staticURL(123)",
+            expandedSource: "#staticURL(123)",
             diagnostics: [
                 DiagnosticSpec(message: "Argument is not a string literal", line: 1, column: 1)
             ],
@@ -51,5 +42,32 @@ final class UtilsMacroTests: XCTestCase {
         )
     }
 }
+
+#if canImport(UIKit)
+import UIKit
+import SwiftUI
+extension UtilsMacroTests {
+    private let uikitMacros: [String: Macro.Type] = [
+        "staticSystemUIImage": StaticSystemUIImage.self,
+        "staticSystemImage" : StaticSystemImage.self
+    ]
+    
+    func testChevronUIKit() {
+        assertMacroExpansion(
+            #"#staticSystemUIImage("chevron.left")"#,
+            expandedSource: #"UIKit.UIImage(systemName: "chevron.left")"#,
+            macros: uikitMacros
+        )
+    }
+    
+    func testChevron() {
+        assertMacroExpansion(
+            #"#staticSystemImage("chevron.left")"#,
+            expandedSource: #"SwiftUI.Image(systemName: "chevron.left")"#,
+            macros: uikitMacros
+        )
+    }
+}
+#endif
 
 #endif
